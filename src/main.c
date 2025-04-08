@@ -6,7 +6,7 @@
 /*   By: ebalana- <ebalana-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/11 16:51:39 by ebalana-          #+#    #+#             */
-/*   Updated: 2025/03/25 13:20:24 by ebalana-         ###   ########.fr       */
+/*   Updated: 2025/04/08 11:53:48 by ebalana-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,12 @@ int	main(int argc, char **argv)
 	printf(VALID_ARG);
 	data = init_data(argc, argv);
 	if (!data)
-		return (printf(ERROR_DATA), 1);
+	{
+		if (ft_atoi(argv[2]) == 1)
+			return (printf(ERROR_DATA), 1);
+		else
+			return (1);
+	}
 	if (!init_threads(data))
 	{
 		free_data(data);

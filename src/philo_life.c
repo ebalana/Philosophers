@@ -6,7 +6,7 @@
 /*   By: ebalana- <ebalana-@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/03/12 17:49:57 by ebalana-          #+#    #+#             */
-/*   Updated: 2025/04/02 14:34:48 by ebalana-         ###   ########.fr       */
+/*   Updated: 2025/04/08 12:33:02 by ebalana-         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,32 +28,37 @@ void	print_status(t_philo *philo, const char *status, int meals_eaten)
 	pthread_mutex_unlock(&philo->data->write_mutex);
 }
 
-void	*philolife(void *arg)
+void *philolife(void *arg)
 {
-	t_philo	*philo;
+	t_philo *philo = (t_philo *)arg;
 
-	philo = (t_philo *)arg;
 	while (get_current_time() < philo->data->start_time)
 		usleep(100);
 	if (philo->id % 2 == 0)
-		usleep(1000);
-	while (!philo->data->someone_died)
+		usleep(philo->data->time_to_eat * 0.9);
+	while (1)
 	{
 		pthread_mutex_lock(&philo->data->death_mutex);
-		if (philo->data->finished_philos == philo->data->num_philos)
-		{
-			pthread_mutex_unlock(&philo->data->death_mutex);
-			break ;
-		}
+		int should_stop = philo->data->someone_died || 
+							(philo->data->must_eat != -1 && 
+							philo->data->finished_philos >= philo->data->num_philos);
 		pthread_mutex_unlock(&philo->data->death_mutex);
-		think(philo);
-		take_forks(philo);
-		eat(philo);
-		put_forks(philo);
-		sleep_philo(philo);
+		if (should_stop)
+			break;
+		if (!think(philo)) break;
+		if (!take_forks(philo)) break;
+		// if (!eat(philo)) break;
+		if (!eat(philo)) {
+			put_forks(philo); // Libera los tenedores aunque mueras comiendo
+			break;
+		}
+		if (!put_forks(philo)) break;
+		if (!sleep_philo(philo)) break;
 	}
+	printf("🧵 Filósofo %d ha salido de su rutina\n", philo->id);
 	return (NULL);
 }
+
 
 int	create_observer_thread(t_data *data, pthread_t *observer_thread)
 {
@@ -101,9 +106,11 @@ int	init_threads(t_data *data)
 	while (i < data->num_philos)
 	{
 		pthread_join(threads[i], NULL);
+		printf("✅ Joined hilo Filósofo %d\n", i);
 		i++;
 	}
 	pthread_join(observer_thread, NULL);
+	printf("✅ Joined hilo Observador\n");
 	free(threads);
 	return (1);
 }
